@@ -23,16 +23,16 @@ public class GameBoard {
     }
 
     class hole{
-        Player control = null;
+        Boolean isTaken = false;
         int wholeNumber;
         hole(int wholeNumber){
             System.out.println(wholeNumber);
             this.wholeNumber = wholeNumber;
         }
 
-        public boolean holeOpen(Player player){
-            if (control == null){
-                this.control = player;
+        public boolean holeOpen(){
+            if (!isTaken){
+                isTaken = true;
                 return true;
             }
             return false;
@@ -40,7 +40,7 @@ public class GameBoard {
     }
     class group{
         int groupNumber;
-        private ArrayList <hole> holes;
+        ArrayList <hole> holes;
 
         group(int groupNumber, int size){
             this.groupNumber = groupNumber*size;
