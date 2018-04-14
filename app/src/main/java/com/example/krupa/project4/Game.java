@@ -91,6 +91,10 @@ public class Game {
         }
         return false;
     }
+    public String [] getFlatNameArray(){
+
+        return null;
+    }
 
     public class shotResponse{
         public int currentHole;
