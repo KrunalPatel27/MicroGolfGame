@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class GameBoard {
     int numberOfGroups;
     int GroupSize;
-    ArrayList<group> groups;
+    public ArrayList<group> groups;
 
     GameBoard(int numberOfGroups, int groupSize){
         this.numberOfGroups = numberOfGroups;
@@ -25,14 +25,15 @@ public class GameBoard {
     class hole{
         Boolean isTaken = false;
         int wholeNumber;
+        String status = "Open";
         hole(int wholeNumber){
-            System.out.println(wholeNumber);
             this.wholeNumber = wholeNumber;
         }
 
-        public boolean holeOpen(){
+        public boolean holeOpen(String status){
             if (!isTaken){
                 isTaken = true;
+                this.status = status;
                 return true;
             }
             return false;

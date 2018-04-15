@@ -12,7 +12,7 @@ public class Game {
         JACKPOT, NEAR_MISS, NEAR_GROUP, BIG_MISS, CATASTROPHE, INVALID_MOVE
     }
     public enum Shot_Options{
-        RANDOM, CLOSE_GROUP, SAME_GROUP, TARGET_HOLE
+        RANDOM, CLOSE_GROUP, SAME_GROUP
     }
 
     public final int numberOfGroups;
@@ -21,6 +21,7 @@ public class Game {
     public static GameBoard gameBoard;
     public final int winnerHole;
     public final int winnerGroup;
+    public boolean gameStatus = true;
     public Players p1;
     public Players p2;
 
@@ -48,7 +49,7 @@ public class Game {
         }else
             holeChoice = -1;
 
-        return new shotResponse( holeChoice , makeMove(holeChoice));
+        return new shotResponse( holeChoice , makeMove(holeChoice, p));
     }
 
     private int findValidHoleChoice(int lowerBound, int upperBound, Players p){
@@ -65,10 +66,13 @@ public class Game {
 
 
 
-    public Shot_Responses makeMove(int shootHole){
+    public Shot_Responses makeMove(int shootHole, Players p){
         if(!validateMove(shootHole))return Shot_Responses.INVALID_MOVE;
-        if(isWinnerHole(shootHole))return Shot_Responses.JACKPOT;
-        if(!isCatastrophe(shootHole))return Shot_Responses.CATASTROPHE;
+        if(isWinnerHole(shootHole)){
+            gameStatus = false;
+            return Shot_Responses.JACKPOT;
+        }
+        if(!isCatastrophe(shootHole, p))return Shot_Responses.CATASTROPHE;
         //what kind of Miss
         int shotGroup = shootHole/groupSize;
         if ( shotGroup == winnerGroup) return Shot_Responses.NEAR_MISS;
@@ -81,8 +85,9 @@ public class Game {
         return false;
     }
 
-    private boolean isCatastrophe(int move){
-        return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen();
+    private boolean isCatastrophe(int move, Players p){
+        if(p.ID == 0) return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("p1");
+        return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("p2");
     }
 
     private boolean validateMove(int shootHole){
@@ -92,9 +97,22 @@ public class Game {
         return false;
     }
     public String [] getFlatNameArray(){
-
-        return null;
+        String [] retVal = new String[totatHoles];
+        for(int i = 0; i < gameBoard.numberOfGroups; i++){
+            for(int j =0; j < gameBoard.GroupSize; j++){
+                retVal[(i*groupSize)+j] = gameBoard.groups.get(i).holes.get(j).status;
+            }
+        }
+        return retVal;
     }
+    public  String getFlatName(int index){
+        String value = gameBoard.groups.get(index/groupSize).holes.get(index%groupSize).status;
+        if(index == winnerHole){
+            return "Winner";
+        }
+        return value;
+    }
+
 
     public class shotResponse{
         public int currentHole;
