@@ -1,5 +1,8 @@
 package com.example.krupa.project4;
 
+import android.content.res.Resources;
+import android.graphics.Color;
+
 import java.util.Random;
 
 /**
@@ -70,6 +73,7 @@ public class Game {
         if(!validateMove(shootHole))return Shot_Responses.INVALID_MOVE;
         if(isWinnerHole(shootHole)){
             gameStatus = false;
+            isCatastrophe(shootHole, p);
             return Shot_Responses.JACKPOT;
         }
         if(!isCatastrophe(shootHole, p))return Shot_Responses.CATASTROPHE;
@@ -86,8 +90,8 @@ public class Game {
     }
 
     private boolean isCatastrophe(int move, Players p){
-        if(p.ID == 0) return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("p1");
-        return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("p2");
+        if(p.ID == 0) return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("Player 1");
+        return gameBoard.groups.get(move/groupSize).holes.get(move%groupSize).holeOpen("Player 2");
     }
 
     private boolean validateMove(int shootHole){
@@ -107,10 +111,30 @@ public class Game {
     }
     public  String getFlatName(int index){
         String value = gameBoard.groups.get(index/groupSize).holes.get(index%groupSize).status;
-        if(index == winnerHole){
-            return "Winner";
+        if( !value.equals("Open") && index == winnerHole){
+            return Integer.toString(index+1)+ ": " + value + "Winner";
         }
-        return value;
+        else if(index == winnerHole){
+            return Integer.toString(index+1) + ": Winner";
+        }
+        return Integer.toString(index+1) + ": "+value;
+    }
+    public int getColor(int index, Resources r){
+        String value = gameBoard.groups.get(index/groupSize).holes.get(index%groupSize).status;
+        if(index == winnerHole){
+            return r.getColor(R.color.green);
+        }else if (value.equals("Open")){
+            return r.getColor(R.color.white);
+        }else if(value.equals("Player 1")){
+            return r.getColor(R.color.colorAccent);
+        }
+        return r.getColor(R.color.colorPrimaryDark);
+    }
+
+    public String getWinner(){
+        String value = gameBoard.groups.get(winnerHole/groupSize).holes.get(winnerHole%groupSize).status;
+        if(value.equals("Player 1"))return "Player 1";
+        else return "Player 2";
     }
 
 

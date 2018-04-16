@@ -17,6 +17,7 @@ import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     Game.shotResponse p2Response = null;
     public Thread plThread = null;
     public Thread p2Thread = null;
+    public int scrollPosition = 0;
+    int delayTime = 2000;
 
     @Override
     @SuppressLint("HandlerLeak")
@@ -40,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         lv = findViewById(R.id.listView);
         game = new Game(5, 10, new Random().nextInt(5 * 10));
-        String [] ad = game.getFlatNameArray();
+        final String [] ad = game.getFlatNameArray();
         final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_expandable_list_item_1, game.getFlatNameArray()){
             @NonNull
             @Override
@@ -52,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
                 TextView text = view.findViewById(R.id.text_list_view);
                 text.setText(game.getFlatName(position));
+                text.setBackgroundColor(game.getColor(position, getResources()));
                 return view;
-
             }
         };
 
@@ -72,47 +75,61 @@ public class MainActivity extends AppCompatActivity {
         UIHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
-                if(!game.gameStatus)return;
-                switch (msg.what){
-                   case MSG_1:
-                       switch (msg.arg1){
-                           case 0:
-                               p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.RANDOM, game.p1);
-                               break;
-                           case 1:
-                               p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.CLOSE_GROUP, game.p1);
-                               break;
-                           case 2:
-                               p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.SAME_GROUP, game.p1);
-                               break;
-                       }
-                       adapter.notifyDataSetChanged();
+                if (game.gameStatus){
+                    switch (msg.what) {
+                        case MSG_1:
+                            switch (msg.arg1) {
+                                case 0:
+                                    p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.RANDOM, game.p1);
+                                    break;
+                                case 1:
+                                    p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.CLOSE_GROUP, game.p1);
+                                    break;
+                                case 2:
+                                    p1Response = game.pickAShot(p1Response.currentHole, Game.Shot_Options.SAME_GROUP, game.p1);
+                                    break;
+                            }
 
-                       //Ask p2 to make move
-                       p2Handler.sendEmptyMessage(MSG_2);
-                       break;
 
-                   case MSG_2:
-                       switch (msg.arg1){
-                           case 0:
-                               p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.RANDOM, game.p2);
-                               break;
-                           case 1:
-                               p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.CLOSE_GROUP, game.p2);
-                               break;
-                           case 2:
-                               p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.SAME_GROUP, game.p2);
-                               break;
-                       }
-                       adapter.notifyDataSetChanged();
+                            //Ask p2 to make move
+                            scrollPosition = p1Response.currentHole;
+                            lv.smoothScrollToPosition(scrollPosition);
+                            p2Handler.sendEmptyMessage(0);
+                            break;
 
-                       // Ask p1 to make move
-                       p1Handler.sendEmptyMessage(MSG_1);
-                       break;
+                        case MSG_2:
+                            switch (msg.arg1) {
+                                case 0:
+                                    p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.RANDOM, game.p2);
+                                    break;
+                                case 1:
+                                    p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.CLOSE_GROUP, game.p2);
+                                    break;
+                                case 2:
+                                    p2Response = game.pickAShot(p2Response.currentHole, Game.Shot_Options.SAME_GROUP, game.p2);
+                                    break;
+                            }
 
-                   default:
-                       break;
-               }
+
+                            // Ask p1 to make move
+                            scrollPosition = p2Response.currentHole;
+                            lv.smoothScrollToPosition(scrollPosition);
+                            p1Handler.sendEmptyMessage(messageEncode(p1Response.response));
+                            break;
+
+                        default:
+                            break;
+                    }
+                    //adapter.notifyDataSetInvalidated();
+
+                    adapter.notifyDataSetChanged();
+                } else{
+                    String winnerText = "Winner: " + game.getWinner();
+                    lv.smoothScrollToPosition(game.winnerHole);
+                    Toast.makeText(context, winnerText,
+                            Toast.LENGTH_LONG).show();
+                    adapter.notifyDataSetChanged();
+                }
 
             }
 
@@ -120,10 +137,11 @@ public class MainActivity extends AppCompatActivity {
         while(p1Handler == null || p2Handler == null){
            //do nothing
         }
-        p1Handler.sendEmptyMessage(MSG_1);
+        p1Handler.sendEmptyMessage(6);
 
 
     }
+
     int messageEncode(Game.Shot_Responses response){
         switch (response){
             case JACKPOT:
@@ -154,38 +172,41 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void handleMessage(Message msg) {
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(delayTime);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     Message m = new Message();
-                    m.arg1 = 0;
-                    m.what = MSG_1;
-                    UIHandler.sendMessage(m);
-                    return;
-                    /*
+
                     switch (msg.what){
-                        case 0:
-                            break;
                         case 1:
+                            m.arg1 =0;
                             break;
                         case 2:
+                            m.arg1 =2;
                             break;
                         case 3:
+                            m.arg1 =1;
                             break;
-                        case 4:
-                            break;
-                        case 5:
+                        case 6:
+                            m.arg1 = 0;
                             break;
                         default:
                             break;
                     }
-                    */
+
+                    m.what = MSG_1;
+                    UIHandler.sendMessage(m);
                 }
             };
             Looper.loop();
         }
     }
+
+    /*
+    p2 always shoots at random hole
+    plays on luck
+     */
     public class Player2 implements Runnable {
 
         @Override
@@ -196,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void handleMessage(Message msg) {
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(delayTime);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -205,27 +226,11 @@ public class MainActivity extends AppCompatActivity {
                     m.what = MSG_2;
                     UIHandler.sendMessage(m);
                     return;
-                    /*
-                    switch (msg.what){
-                        case 0:
-                            break;
-                        case 1:
-                            break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
-                        case 4:
-                            break;
-                        case 5:
-                            break;
-                        default:
-                            break;
-                    }
-                    */
+
                 }
             };
             Looper.loop();
         }
     }
+
 }
